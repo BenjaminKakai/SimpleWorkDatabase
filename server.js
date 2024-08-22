@@ -18,19 +18,18 @@ const upload = multer({ dest: 'uploads/' });
 
 // CORS configuration
 const corsOptions = {
-    origin: true, // Allow requests from any origin
+    origin: 'https://66c70075de3ca9007e8e010a--tangentinhouse.netlify.app', // Replace with your frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     optionsSuccessStatus: 204
 };
 
-app.use(cors({
-    origin: 'https://66c70075de3ca9007e8e010a--tangentinhouse.netlify.app' // Replace with your frontend URL
-  }));
-
 // Apply CORS middleware
 app.use(cors(corsOptions));
+
+// Explicitly handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -263,6 +262,24 @@ app.get('/clients/:id', authenticateJWT, async (req, res) => {
     }
 });
 
+app.put('/clients/:id', authenticateJWT, async (req, res) => {
+    const clientId = req.params.id;
+    const { project, bedrooms, budget, schedule, email, fullname, phone, quality, conversation_status } = req.body;
+    try {
+        const result = await pool.query(
+            'UPDATE clients SET project = $1, bedrooms = $2, budget = $3, schedule = $4, email = $5, fullname = $6, phone = $7, quality = $8, conversation_status = $9 WHERE id = $10 RETURNING *',
+            [project, bedrooms, budget, schedule, email, fullname, phone, quality, conversation_status, clientId]
+        );
+        if (result.rows.length === 0) {
+            return res.status(404).send('Client not found');
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error updating client', err.stack);
+        res.status(500).send('Server error');
+    }
+});
+
 app.delete('/clients/:id', authenticateJWT, async (req, res) => {
     const clientId = req.params.id;
     try {
@@ -270,17 +287,11 @@ app.delete('/clients/:id', authenticateJWT, async (req, res) => {
         if (result.rows.length === 0) {
             return res.status(404).send('Client not found');
         }
-        res.status(200).json(result.rows[0]);
+        res.json(result.rows[0]);
     } catch (err) {
         console.error('Error deleting client', err.stack);
         res.status(500).send('Server error');
     }
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err.stack);
-    res.status(500).send('Server error');
 });
 
 app.listen(port, () => {

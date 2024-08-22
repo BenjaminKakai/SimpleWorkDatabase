@@ -18,27 +18,19 @@ const upload = multer({ dest: 'uploads/' });
 
 // CORS configuration
 const corsOptions = {
-    origin: 'https://66c6fc6dd7e7ad2cda719ae0--tangentinhouse.netlify.app',
+    origin: true, // Allow requests from any origin
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     optionsSuccessStatus: 204
 };
 
+app.use(cors({
+    origin: 'https://66c70075de3ca9007e8e010a--tangentinhouse.netlify.app' // Replace with your frontend URL
+  }));
+
 // Apply CORS middleware
 app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-
-// Middleware to set CORS headers for all responses
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', 'https://66c6fc6dd7e7ad2cda719ae0--tangentinhouse.netlify.app');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    next();
-});
 
 app.use(bodyParser.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
